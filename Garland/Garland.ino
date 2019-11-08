@@ -7,26 +7,34 @@ Button button(PIN_BUTTON);
 //#define PIN_GREEN 7
 //#define PIN_BLUE 8
 int lampsPins[] = {6, 7, 8};
+int lampsCount = sizeof(lampsPins)/sizeof(int);
+bool allLampsAreOn;
+bool allLampsAreOff;
 
 #define totalModes 4;
 int currentMode;
 
-int delayTime;
+unsigned long modeStartTime;//ms
+unsigned long delayTime;
 
 void setup() {
-  // put your setup code here, to run once:
+  allLampsAreOn = false;
+  allLampsAreOff = false;
   currentMode = 0;
+  modeStartTime = millis();
   delayTime = 500;//ms
+  Serial.begin(115200);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   if (button.wasPressed())
   {
-    //TODO: меняем режим
+    //меняем режим
     currentMode = (currentMode + 1) % totalModes;
+    modeStartTime = millis();
+    Serial.println(currentMode);
   }
-  //TODO: проигрываем текущий режим
+  //проигрываем текущий режим
   switch (currentMode)
   {
     case 1:
@@ -49,32 +57,45 @@ void set_brightness(int pin, int brightness) {
 
 //Выключен
 void mode_zero() {
-  for (int i = 0; i < sizeof(lampsPins)/sizeof(int); i++)
+  if (!allLampsAreOff)
   {
-    set_brightness(i, 0);
+    for (int i = 0; i < lampsCount; i++)
+      set_brightness(lampsPins[i], 0);
+    allLampsAreOn = false;
+    allLampsAreOff = true;
   }
 }
 //Постоянно горит
 void mode_one() {
-  for (int i = 0; i < sizeof(lampsPins)/sizeof(int); i++)
+  if (!allLampsAreOn)
   {
-    set_brightness(i, 255);
+    for (int i = 0; i < lampsCount; i++)
+      set_brightness(lampsPins[i], 255);
+    allLampsAreOn = true;
+    allLampsAreOff = false;
   }
 }
 //Мигает всеми сразу
 void mode_two() {
-  mode_one();
-  delay(delayTime);
-  mode_zero();
-  delay(delayTime);
+  if (millis() - modeStartTime >= delayTime)
+  {
+    if (allLampsAreOn)
+      mode_zero();
+    else
+      mode_one();
+    modeStartTime = millis();
+  }
 }
 //Горящий смещается (змейка)
+int currentLamp = 0;
 void mode_three() {
-  mode_zero();
-  for (int i = 0; i < sizeof(lampsPins)/sizeof(int); i++)
+  if (millis() - modeStartTime >= delayTime)
   {
-    set_brightness(i, 255);
-    delay(delayTime);
-    set_brightness(i, 0);
+    mode_zero();
+    currentLamp = (currentLamp + 1) % lampsCount;
+    set_brightness(lampsPins[currentLamp], 255);
+    allLampsAreOn = false;
+    allLampsAreOff = false;
+    modeStartTime = millis();
   }
 }
