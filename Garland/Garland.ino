@@ -45,6 +45,7 @@ void loop() {
     break;
     case 3:
       mode_three();
+    break;
     default:
       mode_zero();
     break;
