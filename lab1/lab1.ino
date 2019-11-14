@@ -1,23 +1,22 @@
 #include "button.h"
 
-#define PIN_BUTTON 5
-Button button(PIN_BUTTON);
+const int totalModes = 4;
+const int lampsPins[] = {6, 7, 8};
+const int lampsCount = sizeof(lampsPins)/sizeof(int);
+const int buttonPin = 5;
+const Button button(buttonPin);
 
-int lampsPins[] = {6, 7, 8};
-int lampsCount = sizeof(lampsPins)/sizeof(int);
+int currentMode;
+int currentBlinkingLamp;
 bool allLampsAreOn;
 bool allLampsAreOff;
-
-#define totalModes 4;
-int currentMode;
-
 unsigned long modeStartTimeMs;
 unsigned long delayTimeMs;
 
 void setup() {
+  currentMode = 0;
   allLampsAreOn = false;
   allLampsAreOff = false;
-  currentMode = 0;
   modeStartTimeMs = millis();
   delayTimeMs = 500;
   Serial.begin(115200);
@@ -82,7 +81,7 @@ void modeTurnedOn() {
 void modeBlink() {
   if (millis() - modeStartTimeMs >= delayTimeMs)
   {
-    if (allLampsAreOn)
+    if (allLampsAreOn || !allLampsAreOff)
       modeTurnedOff();
     else
       modeTurnedOn();
@@ -90,13 +89,12 @@ void modeBlink() {
   }
 }
 
-int currentLamp = 0;
 void modeSnake() {
   if (millis() - modeStartTimeMs >= delayTimeMs)
   {
     modeTurnedOff();
-    currentLamp = (currentLamp + 1) % lampsCount;
-    setBrightness(lampsPins[currentLamp], 255);
+    currentBlinkingLamp = (currentBlinkingLamp + 1) % lampsCount;
+    setBrightness(lampsPins[currentBlinkingLamp], 255);
     allLampsAreOn = false;
     allLampsAreOff = false;
     modeStartTimeMs = millis();
